@@ -98,10 +98,7 @@ class Locale:
 
     @staticmethod
     def clean_dictionary(dictionary, threshold=2):
-        del_keys = []
-        for key in dictionary:
-            if len(key) < threshold:
-                del_keys.append(key)
+        del_keys = [key for key in dictionary if len(key) < threshold]
         for del_key in del_keys:
             del dictionary[del_key]
         return dictionary
@@ -134,10 +131,9 @@ class Locale:
             for pattern, replacement in relative_translations.items():
                 if pattern.match(word):
                     date_string_tokens[i] = pattern.sub(replacement, word)
-            else:
-                if word in dictionary:
-                    fallback = word if keep_formatting and not word.isalpha() else ''
-                    date_string_tokens[i] = dictionary[word] or fallback
+            if word in dictionary:
+                fallback = word if keep_formatting and not word.isalpha() else ''
+                date_string_tokens[i] = dictionary[word] or fallback
         if "in" in date_string_tokens:
             date_string_tokens = self._clear_future_words(date_string_tokens)
 
@@ -170,7 +166,7 @@ class Locale:
                 value = list(map(normalize_unicode, value))
             pattern = '|'.join(sorted(value, key=len, reverse=True))
             pattern = pattern.replace(r'(\d+', r'(?P<n>\d+')
-            pattern = re.compile(r'^(?:{})$'.format(pattern), re.UNICODE | re.IGNORECASE)
+            pattern = re.compile(f'^(?:{pattern})$', re.UNICODE | re.IGNORECASE)
             relative_dictionary[pattern] = key
         return relative_dictionary
 
@@ -194,7 +190,7 @@ class Locale:
                     skip_next_token = False
                     continue
 
-                if word == '' or word == ' ':
+                if word in ['', ' ']:
                     translated_chunk.append(word)
                     original_chunk.append(original_tokens[i])
                 elif (
@@ -220,16 +216,14 @@ class Locale:
                 elif self._token_with_digits_is_ok(word):
                     translated_chunk.append(word)
                     original_chunk.append(original_tokens[i])
-                # Use original token because word_is_tz is case sensitive
                 elif translated_chunk and word_is_tz(original_tokens[i]):
                     translated_chunk.append(word)
                     original_chunk.append(original_tokens[i])
-                else:
-                    if translated_chunk:
-                        translated.append(translated_chunk)
-                        translated_chunk = []
-                        original.append(original_chunk)
-                        original_chunk = []
+                elif translated_chunk:
+                    translated.append(translated_chunk)
+                    translated_chunk = []
+                    original.append(original_chunk)
+                    original_chunk = []
             if translated_chunk:
                 translated.append(translated_chunk)
                 original.append(original_chunk)
@@ -244,22 +238,21 @@ class Locale:
         dictionary = self._get_dictionary(settings=settings)
         abbreviations = []
         if self._abbreviations is None:
-            for item in dictionary:
-                if item.endswith('.') and len(item) > 1:
-                    abbreviations.append(item)
+            abbreviations.extend(
+                item for item in dictionary if item.endswith('.') and len(item) > 1
+            )
             self._abbreviations = abbreviations
         return self._abbreviations
 
     def _sentence_split(self, string, settings):
         abbreviations = self._get_abbreviations(settings=settings)
         digit_abbreviations = ['[0-9]']  # numeric date with full stop
-        abbreviation_string = ''
-
-        for abbreviation in abbreviations:
-            abbreviation_string += '(?<! ' + abbreviation[:-1] + ')'  # negative lookbehind
+        abbreviation_string = ''.join(
+            f'(?<! {abbreviation[:-1]})' for abbreviation in abbreviations
+        )
         if self.shortname in ['fi', 'cs', 'hu', 'de', 'da']:
             for digit_abbreviation in digit_abbreviations:
-                abbreviation_string += '(?<!' + digit_abbreviation + ')'  # negative lookbehind
+                abbreviation_string += f'(?<!{digit_abbreviation})'
 
         splitters_dict = {1: r'[\.!?;…\r\n]+(?:\s|$)*',  # most European, Tagalog, Hebrew, Georgian,
                           # Indonesian, Vietnamese
@@ -270,11 +263,9 @@ class Locale:
                           6: r'[\r\n؟!\.…]+(?:\s|$)+'}  # Arabic and Farsi
         if 'sentence_splitter_group' not in self.info:
             split_reg = abbreviation_string + splitters_dict[1]
-            sentences = re.split(split_reg, string)
         else:
             split_reg = abbreviation_string + splitters_dict[self.info['sentence_splitter_group']]
-            sentences = re.split(split_reg, string)
-
+        sentences = re.split(split_reg, string)
         for i in sentences:
             if not i:
                 sentences.remove(i)
@@ -294,12 +285,10 @@ class Locale:
                 if i < len(original_tokens):
                     if token == normalize_unicode(original_tokens[i].lower()):
                         add_empty = False
+                    elif add_empty:
+                        original_tokens.insert(i, '')
                     else:
-                        if not add_empty:
-                            add_empty = True
-                            continue
-                        else:
-                            original_tokens.insert(i, '')
+                        add_empty = True
                 else:
                     original_tokens.insert(i, '')
         else:
@@ -308,12 +297,10 @@ class Locale:
                 if i < len(simplified_tokens):
                     if normalize_unicode(token.lower()) == simplified_tokens[i]:
                         add_empty = False
+                    elif add_empty:
+                        simplified_tokens.insert(i, '')
                     else:
-                        if not add_empty:
-                            add_empty = True
-                            continue
-                        else:
-                            simplified_tokens.insert(i, '')
+                        add_empty = True
                 else:
                     simplified_tokens.insert(i, '')
 
@@ -375,16 +362,9 @@ class Locale:
 
     def _token_with_digits_is_ok(self, token):
         if 'no_word_spacing' in self.info:
-            if re.search(r'[\d\.:\-/]+', token) is not None:
-                return True
-            else:
-                return False
-
+            return re.search(r'[\d\.:\-/]+', token) is not None
         else:
-            if re.search(r'\d+', token) is not None:
-                return True
-            else:
-                return False
+            return re.search(r'\d+', token) is not None
 
     def _simplify(self, date_string, settings=None):
         date_string = date_string.lower()

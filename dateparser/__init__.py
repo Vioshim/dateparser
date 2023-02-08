@@ -58,7 +58,5 @@ def parse(date_string, date_formats=None, languages=None, locales=None,
         parser = DateDataParser(languages=languages, locales=locales,
                                 region=region, settings=settings, detect_languages_function=detect_languages_function)
 
-    data = parser.get_date_data(date_string, date_formats)
-
-    if data:
+    if data := parser.get_date_data(date_string, date_formats):
         return data['date_obj']

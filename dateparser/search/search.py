@@ -26,8 +26,7 @@ class _ExactLanguageSearch:
 
     def search(self, shortname, text, settings):
         self.get_current_language(shortname)
-        result = self.language.translate_search(text, settings=settings)
-        return result
+        return self.language.translate_search(text, settings=settings)
 
     @staticmethod
     def set_relative_base(substring, already_parsed):
@@ -105,9 +104,7 @@ class _ExactLanguageSearch:
     def parse_found_objects(self, parser, to_parse, original, translated, settings):
         parsed = []
         substrings = []
-        need_relative_base = True
-        if settings.RELATIVE_BASE:
-            need_relative_base = False
+        need_relative_base = not settings.RELATIVE_BASE
         for i, item in enumerate(to_parse):
             if len(item) <= 2:
                 continue
@@ -182,11 +179,15 @@ class DateSearchWithDetection:
             return detected_languages[0] if detected_languages else None
 
         if isinstance(languages, (list, tuple, Set)):
-            if all([language in self.available_language_map for language in languages]):
+            if all(
+                language in self.available_language_map for language in languages
+            ):
                 languages = [self.available_language_map[language] for language in languages]
             else:
                 unsupported_languages = set(languages) - set(self.available_language_map.keys())
-                raise ValueError("Unknown language(s): %s" % ', '.join(map(repr, unsupported_languages)))
+                raise ValueError(
+                    f"Unknown language(s): {', '.join(map(repr, unsupported_languages))}"
+                )
         elif languages is not None:
             raise TypeError("languages argument must be a list (%r given)" % type(languages))
 
@@ -195,10 +196,9 @@ class DateSearchWithDetection:
         else:
             self.language_detector = FullTextLanguageDetector(list(self.available_language_map.values()))
 
-        detected_language = self.language_detector._best_language(text) or (
+        return self.language_detector._best_language(text) or (
             settings.DEFAULT_LANGUAGES[0] if settings.DEFAULT_LANGUAGES else None
         )
-        return detected_language
 
     @apply_settings
     def search_dates(self, text, languages=None, settings=None, detect_languages_function=None):
@@ -237,7 +237,13 @@ class DateSearchWithDetection:
         language_shortname = self.detect_language(
             text=text, languages=languages, settings=settings, detect_languages_function=detect_languages_function
         )
-        if not language_shortname:
-            return {'Language': None, 'Dates': None}
-        return {'Language': language_shortname, 'Dates': self.search.search_parse(language_shortname, text,
-                                                                                  settings=settings)}
+        return (
+            {
+                'Language': language_shortname,
+                'Dates': self.search.search_parse(
+                    language_shortname, text, settings=settings
+                ),
+            }
+            if language_shortname
+            else {'Language': None, 'Dates': None}
+        )

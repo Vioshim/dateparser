@@ -8,7 +8,7 @@ from dateparser_data.settings import default_parsers
 import datetime
 import pytz
 
-today = datetime.datetime.today()
+today = datetime.datetime.now()
 
 
 class TestTranslateSearch(BaseTestCase):

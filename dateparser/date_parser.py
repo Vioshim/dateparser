@@ -49,8 +49,8 @@ class DateParser:
 
         if (
             not settings.RETURN_AS_TIMEZONE_AWARE
-            or (settings.RETURN_AS_TIMEZONE_AWARE
-                and 'default' == settings.RETURN_AS_TIMEZONE_AWARE and not ptz)
+            or settings.RETURN_AS_TIMEZONE_AWARE == 'default'
+            and not ptz
         ):
             date_obj = date_obj.replace(tzinfo=None)
 

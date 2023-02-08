@@ -323,7 +323,7 @@ class LanguageValidator:
                         result = False
 
                 used_groups = set(map(int, groups))
-                expected_groups = set(range(0, compiled_key.groups + 1))
+                expected_groups = set(range(compiled_key.groups + 1))
                 extra_groups = used_groups - expected_groups
                 not_used_groups = expected_groups - used_groups
                 not_used_groups -= {0}  # Entire substring is not required to be used
@@ -358,8 +358,7 @@ class LanguageValidator:
     def _validate_extra_keys(cls, language_id, info):
         result = True
 
-        extra_keys = set(info.keys()) - set(cls.VALID_KEYS)
-        if extra_keys:
+        if extra_keys := set(info.keys()) - set(cls.VALID_KEYS):
             cls.get_logger().error(
                 "Extra keys found for '%(id)s' language: %(keys)s",
                 {'id': language_id, 'keys': ", ".join(map(repr, extra_keys))})

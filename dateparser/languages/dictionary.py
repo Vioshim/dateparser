@@ -51,7 +51,7 @@ class Dictionary:
 
         if 'skip' in locale_info:
             skip = map(methodcaller('lower'), locale_info['skip'])
-            dictionary.update(zip_longest(skip, [], fillvalue=None))
+            dictionary |= zip_longest(skip, [], fillvalue=None)
         if 'pertain' in locale_info:
             pertain = map(methodcaller('lower'), locale_info['pertain'])
             dictionary.update(zip_longest(pertain, [], fillvalue=None))
@@ -104,13 +104,12 @@ class Dictionary:
         if has_only_keep_tokens:
             return False
         match_relative_regex = self._get_match_relative_regex_cache()
-        for token in tokens:
-            if token.isdigit() or match_relative_regex.match(token) or token in self:
-                continue
-            else:
-                return False
-        else:
-            return True
+        return not any(
+            not token.isdigit()
+            and not match_relative_regex.match(token)
+            and token not in self
+            for token in tokens
+        )
 
     def split(self, string, keep_formatting=False):
         """
@@ -174,9 +173,9 @@ class Dictionary:
             self._settings.registry_key not in self._sorted_words_cache
             or self.info['name'] not in self._sorted_words_cache[self._settings.registry_key]
         ):
-            self._sorted_words_cache.setdefault(
-                self._settings.registry_key, {})[self.info['name']] = \
-                sorted([key for key in self], key=len, reverse=True)
+            self._sorted_words_cache.setdefault(self._settings.registry_key, {})[
+                self.info['name']
+            ] = sorted(list(self), key=len, reverse=True)
         return self._sorted_words_cache[self._settings.registry_key][self.info['name']]
 
     def _get_split_regex_cache(self):
@@ -190,12 +189,12 @@ class Dictionary:
     def _construct_split_regex(self):
         known_words_group = "|".join(map(re.escape, self._get_sorted_words_from_cache()))
         if self._no_word_spacing:
-            regex = r"^(.*?)({})(.*)$".format(known_words_group)
+            regex = f"^(.*?)({known_words_group})(.*)$"
         else:
-            regex = r"^(.*?(?:\A|\W|_|\d))({})((?:\Z|\W|_|\d).*)$".format(known_words_group)
+            regex = f"^(.*?(?:\A|\W|_|\d))({known_words_group})((?:\Z|\W|_|\d).*)$"
         self._split_regex_cache.setdefault(
             self._settings.registry_key, {})[self.info['name']] = \
-            re.compile(regex, re.UNICODE | re.IGNORECASE)
+                re.compile(regex, re.UNICODE | re.IGNORECASE)
 
     def _get_sorted_relative_strings_from_cache(self):
         if (
@@ -219,12 +218,12 @@ class Dictionary:
     def _construct_split_relative_regex(self):
         known_relative_strings_group = "|".join(self._get_sorted_relative_strings_from_cache())
         if self._no_word_spacing:
-            regex = "({})".format(known_relative_strings_group)
+            regex = f"({known_relative_strings_group})"
         else:
-            regex = "(?<=(?:\\A|\\W|_))({})(?=(?:\\Z|\\W|_))".format(known_relative_strings_group)
+            regex = f"(?<=(?:\\A|\\W|_))({known_relative_strings_group})(?=(?:\\Z|\\W|_))"
         self._split_relative_regex_cache.setdefault(
             self._settings.registry_key, {})[self.info['name']] = \
-            re.compile(regex, re.UNICODE | re.IGNORECASE)
+                re.compile(regex, re.UNICODE | re.IGNORECASE)
 
     def _get_match_relative_regex_cache(self):
         if (
@@ -236,10 +235,10 @@ class Dictionary:
 
     def _construct_match_relative_regex(self):
         known_relative_strings_group = "|".join(self._get_sorted_relative_strings_from_cache())
-        regex = "^({})$".format(known_relative_strings_group)
+        regex = f"^({known_relative_strings_group})$"
         self._match_relative_regex_cache.setdefault(
             self._settings.registry_key, {})[self.info['name']] = \
-            re.compile(regex, re.UNICODE | re.IGNORECASE)
+                re.compile(regex, re.UNICODE | re.IGNORECASE)
 
 
 class NormalizedDictionary(Dictionary):

@@ -81,13 +81,13 @@ class non_gregorian_parser(_parser):
         year = params['year']
         month = params['month']
         if (
-            not(0 < day <= self.calendar_converter.month_length(year, month))
-            and not(self._token_day or hasattr(self, '_token_weekday'))
+            not (0 < day <= self.calendar_converter.month_length(year, month))
+            and not self._token_day
+            and not hasattr(self, '_token_weekday')
         ):
             day = self.calendar_converter.month_length(year, month)
         year, month, day = self.calendar_converter.to_gregorian(year=year, month=month, day=day)
-        c_params = params.copy()
-        c_params.update(dict(year=year, month=month, day=day))
+        c_params = params | dict(year=year, month=month, day=day)
         return datetime(**c_params)
 
     def _get_datetime_obj_params(self):
@@ -95,13 +95,15 @@ class non_gregorian_parser(_parser):
             self._set_relative_base()
         now_year, now_month, now_day = self.calendar_converter.from_gregorian(
             self.now.year, self.now.month, self.now.day)
-        params = {
+        return {
             'day': self.day or now_day,
             'month': self.month or now_month,
             'year': self.year or now_year,
-            'hour': 0, 'minute': 0, 'second': 0, 'microsecond': 0,
+            'hour': 0,
+            'minute': 0,
+            'second': 0,
+            'microsecond': 0,
         }
-        return params
 
     def _get_date_obj(self, token, directive):
         year, month, day = self.default_year, self.default_month, self.default_day

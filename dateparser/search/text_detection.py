@@ -37,10 +37,11 @@ class FullTextLanguageDetector(BaseLanguageDetector):
                 if char.lower() in date_string.lower():
                     self.languages = [self.languages[i]]
                     return
-        indices_to_pop = []
-        for i in range(len(self.languages)):
-            if len(date_string_set & self.language_chars[i]) == 0:
-                indices_to_pop.append(i)
+        indices_to_pop = [
+            i
+            for i in range(len(self.languages))
+            if len(date_string_set & self.language_chars[i]) == 0
+        ]
         self.languages = [i for j, i in enumerate(self.languages)
                           if j not in indices_to_pop]
 
@@ -61,6 +62,8 @@ class FullTextLanguageDetector(BaseLanguageDetector):
                     date_string, strip_timezone=True, settings=settings)
                 if num_words[0] > 0 or num_words[1] > 0:
                     applicable_languages.append((language.shortname, num_words))
-        if not applicable_languages:
-            return None
-        return max(applicable_languages, key=lambda p: (p[1][0], p[1][1]))[0]
+        return (
+            max(applicable_languages, key=lambda p: (p[1][0], p[1][1]))[0]
+            if applicable_languages
+            else None
+        )

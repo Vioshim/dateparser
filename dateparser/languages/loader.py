@@ -14,12 +14,8 @@ def _isvalidlocale(locale):
     language = LOCALE_SPLIT_PATTERN.split(locale)[0]
     if language not in language_order:
         return False
-    else:
-        locales_list = language_locale_dict[language]
-        if locale == language or locale in locales_list:
-            return True
-        else:
-            return False
+    locales_list = language_locale_dict[language]
+    return locale == language or locale in locales_list
 
 
 def _filter_valid_locales(locales):
@@ -27,12 +23,10 @@ def _filter_valid_locales(locales):
 
 
 def _construct_locales(languages, region):
-    if region:
-        possible_locales = [language + '-' + region for language in languages]
-        locales = _filter_valid_locales(possible_locales)
-    else:
-        locales = languages
-    return locales
+    if not region:
+        return languages
+    possible_locales = [f'{language}-{region}' for language in languages]
+    return _filter_valid_locales(possible_locales)
 
 
 class LocaleDataLoader:
@@ -141,20 +135,20 @@ class LocaleDataLoader:
                 if not _isvalidlocale(locale):
                     invalid_locales.append(locale)
             if invalid_locales:
-                raise ValueError("Unknown locale(s): %s"
-                                 % ', '.join(map(repr, invalid_locales)))
+                raise ValueError(f"Unknown locale(s): {', '.join(map(repr, invalid_locales))}")
 
-            if not allow_conflicting_locales:
-                if len(set(locales)) > len({t[0] for t in locale_dict.values()}):
-                    raise ValueError("Locales should not have same language and different region")
+            if not allow_conflicting_locales and len(set(locales)) > len(
+                {t[0] for t in locale_dict.values()}
+            ):
+                raise ValueError("Locales should not have same language and different region")
 
         else:
             if languages is None:
                 languages = language_order
-            unsupported_languages = set(languages) - set(language_order)
-            if unsupported_languages:
-                raise ValueError("Unknown language(s): %s"
-                                 % ', '.join(map(repr, unsupported_languages)))
+            if unsupported_languages := set(languages) - set(language_order):
+                raise ValueError(
+                    f"Unknown language(s): {', '.join(map(repr, unsupported_languages))}"
+                )
             if region is None:
                 region = ''
             locales = _construct_locales(languages, region)
@@ -170,13 +164,16 @@ class LocaleDataLoader:
                 lang, reg = lang_reg
                 if lang in self._loaded_languages:
                     locale = Locale(shortname, language_info=deepcopy(self._loaded_languages[lang]))
-                    self._loaded_locales[shortname] = locale
                 else:
                     language_info = getattr(
-                        import_module('dateparser.data.date_translation_data.' + lang), 'info')
+                        import_module(
+                            f'dateparser.data.date_translation_data.{lang}'
+                        ),
+                        'info',
+                    )
                     locale = Locale(shortname, language_info=deepcopy(language_info))
                     self._loaded_languages[lang] = language_info
-                    self._loaded_locales[shortname] = locale
+                self._loaded_locales[shortname] = locale
             yield shortname, self._loaded_locales[shortname]
 
 

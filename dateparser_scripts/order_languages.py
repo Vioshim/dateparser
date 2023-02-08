@@ -24,7 +24,7 @@ def _get_language_locale_dict():
     for language_name in available_language_names:
         language_locale_dict[language_name] = []
         for locale_name in available_locale_names:
-            if re.match(language_name + '-[A-Z0-9]+$', locale_name):
+            if re.match(f'{language_name}-[A-Z0-9]+$', locale_name):
                 language_locale_dict[language_name].append(locale_name)
 
     for language in avoid_languages:
@@ -126,7 +126,7 @@ def _get_language_order(language_locale_dict):
         key=lambda x: language_order_with_duplicates.index(x)
     )
 
-    for index in range(0, len(language_order)):
+    for index in range(len(language_order)):
         language_order[index] = re.sub(r'_', r'-', language_order[index])
 
     cldr_languages = language_locale_dict.keys()
@@ -142,7 +142,7 @@ def _get_language_order(language_locale_dict):
             language_order.insert(language_order.index(parent_language) + 1, language)
         else:
             remaining_languages.append(language)
-    language_order = language_order + sorted(remaining_languages)
+    language_order += sorted(remaining_languages)
     language_order = list(map(str, language_order))
     return language_order
 
