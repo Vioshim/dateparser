@@ -20,7 +20,7 @@ class StaticTzInfo(tzinfo):
         return timedelta(0)
 
     def __repr__(self):
-        return "<%s '%s'>" % (self.__class__.__name__, self.__name)
+        return f"<{self.__class__.__name__} '{self.__name}'>"
 
     def localize(self, dt, is_dst=False):
         if dt.tzinfo is not None:
@@ -35,8 +35,7 @@ def pop_tz_offset_from_string(date_string, as_offset=True):
     if _search_regex_ignorecase.search(date_string):
         for name, info in _tz_offsets:
             timezone_re = info['regex']
-            timezone_match = timezone_re.search(date_string)
-            if timezone_match:
+            if timezone_match := timezone_re.search(date_string):
                 start, stop = timezone_match.span()
                 date_string = date_string[:start + 1] + date_string[stop:]
                 return (

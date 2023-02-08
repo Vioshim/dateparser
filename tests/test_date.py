@@ -90,7 +90,7 @@ class TestDateRangeFunction(BaseTestCase):
             self.assertLess(self.result[i], self.result[i + 1])
 
     def then_period_was_rejected(self, period):
-        self.then_error_was_raised(ValueError, ['Invalid argument: {}'.format(period)])
+        self.then_error_was_raised(ValueError, [f'Invalid argument: {period}'])
 
 
 class TestGetIntersectingPeriodsFunction(BaseTestCase):
@@ -208,7 +208,7 @@ class TestGetIntersectingPeriodsFunction(BaseTestCase):
         self.when_intersecting_period_calculated(low=datetime(2014, 6, 15),
                                                  high=datetime(2014, 6, 25),
                                                  period_size=period_size)
-        self.then_error_was_raised(ValueError, ['Invalid period: ' + str(period_size)])
+        self.then_error_was_raised(ValueError, [f'Invalid period: {str(period_size)}'])
 
     @parameterized.expand([
         param(low=datetime(2014, 4, 15), high=datetime(2014, 4, 14), period_size='month'),
@@ -461,8 +461,12 @@ class TestDateDataParser(BaseTestCase):
         self.given_parser()
         self.when_date_string_is_parsed(date_string, date_formats)
         self.then_error_was_raised(
-            TypeError, ["Date formats should be list, tuple or set of strings",
-                        "'{}' object is not iterable".format(type(date_formats).__name__)])
+            TypeError,
+            [
+                "Date formats should be list, tuple or set of strings",
+                f"'{type(date_formats).__name__}' object is not iterable",
+            ],
+        )
 
     @parameterized.expand([
         param(date_string={"date": "12/11/1998"}),

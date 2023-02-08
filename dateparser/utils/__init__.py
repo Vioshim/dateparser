@@ -42,8 +42,7 @@ def combine_dicts(primary_dict, supplementary_dict):
 
 
 def find_date_separator(format):
-    m = re.search(r'(?:(?:%[dbBmaA])(\W))+', format)
-    if m:
+    if m := re.search(r'(?:(?:%[dbBmaA])(\W))+', format):
         return m.group(1)
 
 
@@ -58,11 +57,11 @@ def _get_missing_parts(fmt):
         'year': ['%y', '%-y', '%Y']
     }
 
-    missing = [
-        field for field in ('day', 'month', 'year')
-        if not any(directive in fmt for directive in directive_mapping[field])
+    return [
+        field
+        for field in ('day', 'month', 'year')
+        if all(directive not in fmt for directive in directive_mapping[field])
     ]
-    return missing
 
 
 def get_timezone_from_tz_string(tz_string):
@@ -70,10 +69,9 @@ def get_timezone_from_tz_string(tz_string):
         return timezone(tz_string)
     except UnknownTimeZoneError as e:
         for name, info in _tz_offsets:
-            if info['regex'].search(' %s' % tz_string):
+            if info['regex'].search(f' {tz_string}'):
                 return StaticTzInfo(name, info['offset'])
-        else:
-            raise e
+        raise e
 
 
 def localize_timezone(date_time, tz_string):
@@ -101,7 +99,7 @@ def apply_tzdatabase_timezone(date_time, pytz_string):
 
 def apply_dateparser_timezone(utc_datetime, offset_or_timezone_abb):
     for name, info in _tz_offsets:
-        if info['regex'].search(' %s' % offset_or_timezone_abb):
+        if info['regex'].search(f' {offset_or_timezone_abb}'):
             tz = StaticTzInfo(name, info['offset'])
             return utc_datetime.astimezone(tz)
 
@@ -113,12 +111,9 @@ def apply_timezone(date_time, tz_string):
         else:
             date_time = date_time.replace(tzinfo=UTC)
 
-    new_datetime = apply_dateparser_timezone(date_time, tz_string)
-
-    if not new_datetime:
-        new_datetime = apply_tzdatabase_timezone(date_time, tz_string)
-
-    return new_datetime
+    return apply_dateparser_timezone(
+        date_time, tz_string
+    ) or apply_tzdatabase_timezone(date_time, tz_string)
 
 
 def apply_timezone_from_settings(date_obj, settings):

@@ -177,9 +177,7 @@ class InvalidSettingsTest(BaseTestCase):
         param('LANGUAGE_DETECTION_CONFIDENCE_THRESHOLD', '1', '', 0.5),
     ])
     def test_check_settings(self, setting, wrong_type, wrong_value, valid_value):
-        with self.assertRaisesRegex(
-            SettingValidationError, r'"{}" must be .*, not "{}".'.format(setting, type(wrong_type).__name__)
-        ):
+        with self.assertRaisesRegex(SettingValidationError, f'"{setting}" must be .*, not "{type(wrong_type).__name__}".'):
             DateDataParser(settings={setting: wrong_type})
 
         if wrong_value:
@@ -248,10 +246,7 @@ def test_no_spaces_strict_parsing(date_string, expected_result):
 
 
 def detect_languages(text, confidence_threshold):
-    if confidence_threshold > 0.5:
-        return ['en']
-    else:
-        return ['fr']
+    return ['en'] if confidence_threshold > 0.5 else ['fr']
 
 
 def test_confidence_threshold_setting_is_applied():

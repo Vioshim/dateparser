@@ -328,7 +328,7 @@ def main():
             locale_specific_dict[locale] = _clean_dict(get_dict_difference(json_language_dict, json_locale_dict))
         json_language_dict["locale_specific"] = OrderedDict(sorted(locale_specific_dict.items()))
         filename = directory + language + ".json"
-        print("writing " + filename)
+        print(f"writing {filename}")
         json_string = json.dumps(json_language_dict, indent=4, separators=(',', ': '),
                                  ensure_ascii=False).encode('utf-8')
         with open(filename, 'wb') as f:

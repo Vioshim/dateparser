@@ -25,7 +25,7 @@ class FreshnessDateDataParser:
         date_string = re.sub(r'\s+', ' ', date_string.strip())
 
         words = [x for x in re.split(r'\W', date_string) if x]
-        words = [x for x in words if not re.match(r'%s' % '|'.join(skip), x)]
+        words = [x for x in words if not re.match(f"{'|'.join(skip)}", x)]
         return not words
 
     def _parse_time(self, date_string, settings):
@@ -46,12 +46,15 @@ class FreshnessDateDataParser:
         _time = self._parse_time(date_string, settings)
 
         def apply_time(dateobj, timeobj):
-            if not isinstance(_time, time):
-                return dateobj
-
-            return dateobj.replace(
-                hour=timeobj.hour, minute=timeobj.minute,
-                second=timeobj.second, microsecond=timeobj.microsecond
+            return (
+                dateobj.replace(
+                    hour=timeobj.hour,
+                    minute=timeobj.minute,
+                    second=timeobj.second,
+                    microsecond=timeobj.microsecond,
+                )
+                if isinstance(_time, time)
+                else dateobj
             )
 
         if isinstance(settings.RELATIVE_BASE, datetime):
@@ -145,9 +148,7 @@ class FreshnessDateDataParser:
         if not m:
             return {}
 
-        kwargs = {}
-        for num, unit in m:
-            kwargs[unit + 's'] = float(num.replace(",", "."))
+        kwargs = {f'{unit}s': float(num.replace(",", ".")) for num, unit in m}
         if 'decades' in kwargs:
             kwargs['years'] = 10 * kwargs['decades'] + kwargs.get('years', 0)
             del kwargs['decades']

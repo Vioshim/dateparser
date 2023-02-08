@@ -83,7 +83,7 @@ def write_complete_data(in_memory=False):
             shutil.rmtree(date_translation_directory)
         os.mkdir(date_translation_directory)
 
-    with open(supplementary_directory + 'base_data.yaml') as f:
+    with open(f'{supplementary_directory}base_data.yaml') as f:
         base_data = RoundTripLoader(f).get_data()
 
     for language in all_languages:
@@ -92,7 +92,7 @@ def write_complete_data(in_memory=False):
         _modify_data(date_translation_data)
         translation_data = json.dumps(date_translation_data, indent=4, separators=(',', ': '),
                                       ensure_ascii=False)
-        out_text = ('info = ' + translation_data + '\n').encode('utf-8')
+        out_text = (f'info = {translation_data}' + '\n').encode('utf-8')
         _write_file(date_translation_directory + language + '.py', out_text, 'wb', in_memory, in_memory_result)
 
     init_text = (
@@ -100,8 +100,20 @@ def write_complete_data(in_memory=False):
         "from .languages_info import language_order, language_locale_dict\n"
     )
 
-    _write_file(translation_data_directory + '__init__.py', init_text, 'w', False, in_memory_result)
-    _write_file(date_translation_directory + '__init__.py', '', 'w', False, in_memory_result)
+    _write_file(
+        f'{translation_data_directory}__init__.py',
+        init_text,
+        'w',
+        False,
+        in_memory_result,
+    )
+    _write_file(
+        f'{date_translation_directory}__init__.py',
+        '',
+        'w',
+        False,
+        in_memory_result,
+    )
 
     return in_memory_result
 

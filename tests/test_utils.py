@@ -31,10 +31,10 @@ class TestUtils(BaseTestCase):
 
     @staticmethod
     def make_class_without_get_keys():
+
         class SomeClass:
             pass
-        some_class = SomeClass
-        return some_class
+        return SomeClass
 
     @parameterized.expand([
         param(date_format=fmt.format(sep=sep), expected_sep=sep)

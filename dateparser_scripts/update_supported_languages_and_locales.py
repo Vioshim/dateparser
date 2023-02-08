@@ -11,12 +11,9 @@ def to_string(data):
     language_column_width = 18
     for language in sorted(data):
         result += language
-        locales = data[language]
-        if locales:
+        if locales := data[language]:
             result += ' ' * (language_column_width - len(language))
-            result += ', '.join(
-                "'{}'".format(locale) for locale in sorted(locales)
-            )
+            result += ', '.join(f"'{locale}'" for locale in sorted(locales))
         result += '\n'
     return result
 

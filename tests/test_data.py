@@ -31,17 +31,29 @@ MONTH_NAMES = ['january', 'february', 'march', 'april', 'may', 'june', 'july',
 
 
 def is_invalid_translation(translation):
-    return (not (translation and isinstance(translation, str))) or '.' in translation
+    return (
+        not translation
+        or not isinstance(translation, str)
+        or '.' in translation
+    )
 
 
 def is_invalid_month_translation(translation):
-    return ((not (translation and isinstance(translation, str)))
-            or '.' in translation or DEFAULT_MONTH_PATTERN.match(translation))
+    return (
+        not translation
+        or not isinstance(translation, str)
+        or '.' in translation
+        or DEFAULT_MONTH_PATTERN.match(translation)
+    )
 
 
 def is_invalid_am_pm_translation(translation):
-    return ((not (translation and isinstance(translation, str)))
-            or '.' in translation or INVALID_AM_PM_PATTERN.match(translation))
+    return (
+        not translation
+        or not isinstance(translation, str)
+        or '.' in translation
+        or INVALID_AM_PM_PATTERN.match(translation)
+    )
 
 
 def is_invalid_simplification(simplification):
@@ -53,9 +65,11 @@ def is_invalid_simplification(simplification):
 
 def is_invalid_relative_mapping(relative_mapping):
     key, value = relative_mapping
-    if not (key and value and isinstance(key, str) and isinstance(value, list)):
-        return True
-    return not all([isinstance(x, str) for x in value])
+    return (
+        not all(isinstance(x, str) for x in value)
+        if (key and value and isinstance(key, str) and isinstance(value, list))
+        else True
+    )
 
 
 def is_invalid_relative_regex_mapping(relative_regex_mapping):
@@ -64,8 +78,10 @@ def is_invalid_relative_regex_mapping(relative_regex_mapping):
         return True
     if '\\1' not in key:
         return True
-    return not (all([isinstance(x, str) for x in value])
-                and all(['(\\d+[.,]?\\d*)' in x for x in value]))
+    return not (
+        all(isinstance(x, str) for x in value)
+        and all('(\\d+[.,]?\\d*)' in x for x in value)
+    )
 
 
 class TestLocaleInfo(BaseTestCase):
@@ -79,7 +95,8 @@ class TestLocaleInfo(BaseTestCase):
         self.given_locale_info(locale)
         extra_keys = list(set(self.info.keys()) - set(VALID_KEYS))
         self.assertFalse(
-            extra_keys, 'Extra keys found for {}: {}'.format(self.shortname, extra_keys))
+            extra_keys, f'Extra keys found for {self.shortname}: {extra_keys}'
+        )
 
     @parameterized.expand(all_locale_params)
     def test_necessary_keys(self, locale):
@@ -284,152 +301,155 @@ class TestLocaleInfo(BaseTestCase):
     def then_keys_present_in_info(self, keys_list):
         absent_keys = list(set(keys_list) - set(self.info.keys()))
         self.assertFalse(
-            absent_keys, '{} not found in locale {}'.format(', '.join(absent_keys), self.shortname))
+            absent_keys,
+            f"{', '.join(absent_keys)} not found in locale {self.shortname}",
+        )
 
     def then_translations_present_in_info(self, keys_list):
         no_translation_keys = [key for key in keys_list if not self.info.get(key)]
         self.assertFalse(
             no_translation_keys,
-            'Translations for {} not found in locale {}'.format(
-                ', '.join(no_translation_keys), self.shortname
-            )
+            f"Translations for {', '.join(no_translation_keys)} not found in locale {self.shortname}",
         )
 
     def then_name_is_valid(self):
         name = self.info['name']
-        self.assertIsInstance(name, str,
-                              'Invalid type for name: {} for locale {}'.format(
-                                  type(name).__name__, self.shortname))
-        self.assertEqual(name, self.shortname,
-                         'Invalid name: {} for locale {}'.format(name, self.shortname))
+        self.assertIsInstance(
+            name,
+            str,
+            f'Invalid type for name: {type(name).__name__} for locale {self.shortname}',
+        )
+        self.assertEqual(
+            name,
+            self.shortname,
+            f'Invalid name: {name} for locale {self.shortname}',
+        )
 
     def then_date_order_is_valid(self):
         if 'date_order' in self.info:
             date_order = self.info['date_order']
             self.assertIsInstance(
-                date_order, str,
-                'Invalid type for date_order: {} for locale {}'.format(
-                    type(date_order).__name__, self.shortname)
+                date_order,
+                str,
+                f'Invalid type for date_order: {type(date_order).__name__} for locale {self.shortname}',
             )
             self.assertIn(
-                date_order, ['DMY', 'DYM', 'MDY', 'MYD', 'YDM', 'YMD'],
-                'Invalid date_order {} for {}'.format(date_order, self.shortname)
+                date_order,
+                ['DMY', 'DYM', 'MDY', 'MYD', 'YDM', 'YMD'],
+                f'Invalid date_order {date_order} for {self.shortname}',
             )
 
     def then_month_translations_are_valid(self, month):
         if month in self.info:
             month_translations = self.info[month]
             self.assertIsInstance(
-                month_translations, list, 'Invalid type for {}: {} for locale {}'.format(
-                    month, type(month_translations).__name__, self.shortname
-                )
+                month_translations,
+                list,
+                f'Invalid type for {month}: {type(month_translations).__name__} for locale {self.shortname}',
             )
             invalid_translations = list(filter(is_invalid_month_translation, month_translations))
             self.assertFalse(
-                invalid_translations, 'Invalid translations for {}: {} for locale {}'.format(
-                    month, ', '.join(map(repr, invalid_translations)), self.shortname
-                )
+                invalid_translations,
+                f"Invalid translations for {month}: {', '.join(map(repr, invalid_translations))} for locale {self.shortname}",
             )
 
     def then_am_pm_translations_are_valid(self, key):
         if key in self.info:
             translations_list = self.info[key]
             self.assertIsInstance(
-                translations_list, list, 'Invalid type for {}: {} for locale {}'.format(
-                    key, type(translations_list).__name__, self.shortname
-                )
+                translations_list,
+                list,
+                f'Invalid type for {key}: {type(translations_list).__name__} for locale {self.shortname}',
             )
             invalid_translations = list(filter(is_invalid_am_pm_translation, translations_list))
             self.assertFalse(
-                invalid_translations, 'Invalid translations for {}: {} for locale {}'.format(
-                    key, ', '.join(map(repr, invalid_translations)), self.shortname
-                )
+                invalid_translations,
+                f"Invalid translations for {key}: {', '.join(map(repr, invalid_translations))} for locale {self.shortname}",
             )
 
     def then_translations_are_valid(self, key):
         if key in self.info:
             translations_list = self.info[key]
             self.assertIsInstance(
-                translations_list, list, 'Invalid type for {}: {} for locale {}'.format(
-                    key, type(translations_list).__name__, self.shortname
-                )
+                translations_list,
+                list,
+                f'Invalid type for {key}: {type(translations_list).__name__} for locale {self.shortname}',
             )
             invalid_translations = list(filter(is_invalid_translation, translations_list))
             self.assertFalse(
-                invalid_translations, 'Invalid translations for {}: {} for locale {}'.format(
-                    key, ', '.join(map(repr, invalid_translations)), self.shortname
-                )
+                invalid_translations,
+                f"Invalid translations for {key}: {', '.join(map(repr, invalid_translations))} for locale {self.shortname}",
             )
 
     def then_skip_pertain_tokens_are_valid(self, key):
         if key in self.info:
             tokens_list = self.info[key]
             self.assertIsInstance(
-                tokens_list, list, 'Invalid type for {}: {} for locale {}'.format(
-                    key, type(tokens_list).__name__, self.shortname)
+                tokens_list,
+                list,
+                f'Invalid type for {key}: {type(tokens_list).__name__} for locale {self.shortname}',
             )
             invalid_tokens = [token for token in tokens_list if not token
                               or not isinstance(token, str)]
             self.assertFalse(
-                invalid_tokens, 'Invalid tokens for {}: {} for locale {}'.format(
-                    key, ', '.join(map(repr, invalid_tokens)), self.shortname
-                )
+                invalid_tokens,
+                f"Invalid tokens for {key}: {', '.join(map(repr, invalid_tokens))} for locale {self.shortname}",
             )
 
     def then_simplifications_are_valid(self):
         if 'simplifications' in self.info:
             simplifications_list = self.info['simplifications']
             self.assertIsInstance(
-                simplifications_list, list, 'Invalid type for simplifications: {} for locale {}'.format(
-                    type(simplifications_list).__name__, self.shortname)
+                simplifications_list,
+                list,
+                f'Invalid type for simplifications: {type(simplifications_list).__name__} for locale {self.shortname}',
             )
             invalid_simplifications = list(filter(is_invalid_simplification, simplifications_list))
             self.assertFalse(
-                invalid_simplifications, 'Invalid simplifications {} for locale {}'.format(
-                    ', '.join(map(repr, invalid_simplifications)), self.shortname
-                ) + ', each simplification must be a single string to string mapping'
+                invalid_simplifications,
+                f"Invalid simplifications {', '.join(map(repr, invalid_simplifications))} for locale {self.shortname}, each simplification must be a single string to string mapping",
             )
 
     def then_relative_type_is_valid(self):
         if 'relative-type' in self.info:
             relative_type_dict = self.info['relative-type']
             self.assertIsInstance(
-                relative_type_dict, dict, 'Invalid type for relative-type: {} for locale {}'.format(
-                    type(relative_type_dict).__name__, self.shortname)
+                relative_type_dict,
+                dict,
+                f'Invalid type for relative-type: {type(relative_type_dict).__name__} for locale {self.shortname}',
             )
             invalid_relative_type = list(filter(is_invalid_relative_mapping,
                                                 relative_type_dict.items()))
             self.assertFalse(
-                invalid_relative_type, 'Invalid relative-type mappings {} for locale {}'.format(
-                    ', '.join(map(repr, invalid_relative_type)), self.shortname
-                ) + ', each mapping must be a string to list (of strings) mapping'
+                invalid_relative_type,
+                f"Invalid relative-type mappings {', '.join(map(repr, invalid_relative_type))} for locale {self.shortname}, each mapping must be a string to list (of strings) mapping",
             )
 
     def then_relative_type_regex_is_valid(self):
         if 'relative-type-regex' in self.info:
             relative_type_dict = self.info['relative-type-regex']
             self.assertIsInstance(
-                relative_type_dict, dict, 'Invalid type for relative-type-regex: {} for locale {}'.format(
-                    type(relative_type_dict).__name__, self.shortname
-                )
+                relative_type_dict,
+                dict,
+                f'Invalid type for relative-type-regex: {type(relative_type_dict).__name__} for locale {self.shortname}',
             )
             invalid_relative_type_regex = list(filter(is_invalid_relative_regex_mapping,
                                                       relative_type_dict.items()))
             self.assertFalse(
-                invalid_relative_type_regex, 'Invalid relative-type-regex mappings {} for locale {}'.format(
-                    ', '.join(map(repr, invalid_relative_type_regex)), self.shortname
-                ) + ', each mapping must be a string to list (of strings) mapping'
+                invalid_relative_type_regex,
+                f"Invalid relative-type-regex mappings {', '.join(map(repr, invalid_relative_type_regex))} for locale {self.shortname}, each mapping must be a string to list (of strings) mapping",
             )
 
     def then_no_word_spacing_is_valid(self):
         if 'no_word_spacing' in self.info:
             no_word_spacing = self.info['no_word_spacing']
             self.assertIsInstance(
-                no_word_spacing, str, 'Invalid type for no_word_spacing: {} for locale {}'.format(
-                    type(no_word_spacing).__name__, self.shortname)
+                no_word_spacing,
+                str,
+                f'Invalid type for no_word_spacing: {type(no_word_spacing).__name__} for locale {self.shortname}',
             )
             self.assertIn(
-                no_word_spacing, ['True', 'False'], 'Invalid no_word_spacing {} for {}'.format(
-                    no_word_spacing, self.shortname
-                )
+                no_word_spacing,
+                ['True', 'False'],
+                f'Invalid no_word_spacing {no_word_spacing} for {self.shortname}',
             )

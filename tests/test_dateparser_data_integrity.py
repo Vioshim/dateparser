@@ -8,5 +8,4 @@ def test_dateparser_data_integrity():
         with open(filename, 'rb') as f:
             assert (
                 f.read().strip() == files[filename].strip()
-            ), "The content of the file \"{}\" doesn't match the content" \
-               " of the generated file.".format(filename)
+            ), f"""The content of the file \"{filename}\" doesn't match the content of the generated file."""

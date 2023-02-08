@@ -45,7 +45,7 @@ class Settings:
         if not settings:
             return 'default'
 
-        keys = sorted(['%s-%s' % (key, str(settings[key])) for key in settings])
+        keys = sorted([f'{key}-{str(settings[key])}' for key in settings])
         return hashlib.md5(''.join(keys).encode('utf-8')).hexdigest()
 
     @classmethod
@@ -100,19 +100,16 @@ class SettingValidationError(ValueError):
 def _check_repeated_values(setting_name, setting_value):
     if len(setting_value) != len(set(setting_value)):
         raise SettingValidationError(
-            'There are repeated values in the "{}" setting'.format(setting_name)
+            f'There are repeated values in the "{setting_name}" setting'
         )
     return
 
 
 def _check_require_part(setting_name, setting_value):
     """Returns `True` if the provided list of parts contains valid values"""
-    invalid_values = set(setting_value) - {'day', 'month', 'year'}
-    if invalid_values:
+    if invalid_values := set(setting_value) - {'day', 'month', 'year'}:
         raise SettingValidationError(
-            '"{}" setting contains invalid values: {}'.format(
-                setting_name, ', '.join(invalid_values)
-            )
+            f""""{setting_name}" setting contains invalid values: {', '.join(invalid_values)}"""
         )
     _check_repeated_values(setting_name, setting_value)
 
@@ -122,23 +119,17 @@ def _check_parsers(setting_name, setting_value):
     existing_parsers = [
         'timestamp', 'relative-time', 'custom-formats', 'absolute-time', 'no-spaces-time', 'negative-timestamp'
     ]  # FIXME: Extract the list of existing parsers from another place (#798)
-    unknown_parsers = set(setting_value) - set(existing_parsers)
-    if unknown_parsers:
+    if unknown_parsers := set(setting_value) - set(existing_parsers):
         raise SettingValidationError(
-            'Found unknown parsers in the "{}" setting: {}'.format(
-                setting_name, ', '.join(unknown_parsers)
-            )
+            f"""Found unknown parsers in the "{setting_name}" setting: {', '.join(unknown_parsers)}"""
         )
     _check_repeated_values(setting_name, setting_value)
 
 
 def _check_default_languages(setting_name, setting_value):
-    unsupported_languages = set(setting_value) - set(language_order)
-    if unsupported_languages:
+    if unsupported_languages := set(setting_value) - set(language_order):
         raise SettingValidationError(
-            "Found invalid languages in the '{}' setting: {}".format(
-                setting_name, ', '.join(map(repr, unsupported_languages))
-            )
+            f"Found invalid languages in the '{setting_name}' setting: {', '.join(map(repr, unsupported_languages))}"
         )
     _check_repeated_values(setting_name, setting_value)
 
@@ -147,10 +138,7 @@ def _check_between_0_and_1(setting_name, setting_value):
     is_valid = 0 <= setting_value <= 1
     if not is_valid:
         raise SettingValidationError(
-            '{} is not a valid value for {}. It can take values between 0 and '
-            '1.'.format(
-                setting_value, setting_name,
-            )
+            f'{setting_value} is not a valid value for {setting_name}. It can take values between 0 and 1.'
         )
 
 
@@ -233,7 +221,7 @@ def check_settings(settings):
     # check settings keys:
     for setting in modified_settings:
         if setting not in settings_values:
-            raise SettingValidationError('"{}" is not a valid setting'.format(setting))
+            raise SettingValidationError(f'"{setting}" is not a valid setting')
 
     for setting_name, setting_value in modified_settings.items():
         setting_props = settings_values[setting_name]
@@ -241,23 +229,14 @@ def check_settings(settings):
         # check type:
         if not isinstance(setting_value, setting_props['type']):
             raise SettingValidationError(
-                '"{}" must be "{}", not "{}".'.format(
-                    setting_name, setting_props['type'], type(setting_value).__name__
-                )
+                f""""{setting_name}" must be "{setting_props['type']}", not "{type(setting_value).__name__}"."""
             )
 
         # check values:
         if setting_props.get('values') and setting_value not in setting_props['values']:
             raise SettingValidationError(
-                '"{}" is not a valid value for "{}", it should be: "{}" or "{}"'.format(
-                    setting_value,
-                    setting_name,
-                    '", "'.join(setting_props['values'][:-1]),
-                    setting_props['values'][-1],
-                )
+                f""""{setting_value}" is not a valid value for "{setting_name}", it should be: "{'", "'.join(setting_props['values'][:-1])}" or "{setting_props['values'][-1]}\""""
             )
 
-        # specific checks
-        extra_check = setting_props.get('extra_check')
-        if extra_check:
+        if extra_check := setting_props.get('extra_check'):
             extra_check(setting_name, setting_value)
